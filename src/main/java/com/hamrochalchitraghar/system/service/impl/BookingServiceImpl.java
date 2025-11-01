@@ -116,10 +116,24 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found!"));
 
-        booking.setStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
+        // 1️⃣ Check if already canceled
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new RuntimeException("Booking already cancelled!");
+        }
 
-        // Free seats
+        // 2️⃣ Determine actor
+        String actor = "SYSTEM"; // default
+        if (booking.getCustomer() != null) actor = "CUSTOMER";
+        // later you can inject Auth context to detect STAFF vs. CUSTOMER
+
+        // 3️⃣ Update booking fields
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(LocalDateTime.now());
+        booking.setCancelledBy(actor);
+        booking.setCancellationReason("User requested cancellation"); // or pass as param
+        bookingRepository.saveAndFlush(booking);
+
+        // 4️⃣ Release seats
         List<String> seatNumbers = List.of(booking.getSeatNo().split(","));
         List<Seat> seats = seatRepository.findByShowId(booking.getShow().getId())
                 .stream()
@@ -132,5 +146,8 @@ public class BookingServiceImpl implements BookingService {
             seat.setLockedAt(null);
         }
         seatRepository.saveAll(seats);
+
+        System.out.println("🔁 Booking " + bookingId + " cancelled by " + actor + ", seats released: " + seatNumbers);
     }
+
 }

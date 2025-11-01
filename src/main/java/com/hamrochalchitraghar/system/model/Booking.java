@@ -2,6 +2,7 @@ package com.hamrochalchitraghar.system.model;
 
 import com.hamrochalchitraghar.system.model.enums.BookingChannel;
 import com.hamrochalchitraghar.system.model.enums.BookingStatus;
+import com.hamrochalchitraghar.system.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -34,4 +35,13 @@ public class Booking {
 
     @Enumerated(EnumType.STRING)
     private BookingChannel channel;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "cancelled_by")
+    private String cancelledBy;  // could hold "CUSTOMER", "STAFF", or "SYSTEM"
+
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
 }
