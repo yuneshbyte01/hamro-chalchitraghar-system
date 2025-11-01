@@ -5,11 +5,12 @@ import com.hamrochalchitraghar.system.model.enums.*;
 import com.hamrochalchitraghar.system.repository.*;
 import com.hamrochalchitraghar.system.service.BookingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,13 +24,11 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<Seat> getAvailableSeats(Long showId) {
         List<Seat> seats = seatRepository.findByShowId(showId);
-
         LocalDateTime now = LocalDateTime.now();
 
         return seats.stream()
-                .filter(seat -> !seat.isBooked())                      // not booked
-                .filter(seat -> seat.getLockedAt() == null ||          // not locked
-                        seat.getLockedAt().isBefore(now.minusMinutes(10))) // or lock expired
+                .filter(seat -> !seat.isBooked())
+                .filter(seat -> seat.getLockedAt() == null || seat.getLockedAt().isBefore(now.minusMinutes(10)))
                 .toList();
     }
 
@@ -45,8 +44,8 @@ public class BookingServiceImpl implements BookingService {
         for (Seat seat : seatsToLock) {
             seat.setLockedBy(lockedBy);
             seat.setLockedAt(now);
-            seatRepository.save(seat);
         }
+        seatRepository.saveAll(seatsToLock);
     }
 
     @Override
@@ -64,8 +63,9 @@ public class BookingServiceImpl implements BookingService {
                     .orElseThrow(() -> new RuntimeException("Customer not found with ID: " + customerId));
         }
 
-        // Step 3: Fetch Seats to be booked
-        List<Seat> requestedSeats = seatRepository.findByShowId(showId).stream()
+        // Step 3: Fetch and Lock Seats
+        List<Seat> requestedSeats = seatRepository.findSeatsForUpdate(showId, seatNumbers)
+                .stream()
                 .filter(seat -> seatNumbers.contains(seat.getSeatNo()))
                 .toList();
 
@@ -73,7 +73,7 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("No valid seats found for this show!");
         }
 
-        // Step 4: Check if all seats are available
+        // Step 4: Validate Seats
         LocalDateTime now = LocalDateTime.now();
         for (Seat seat : requestedSeats) {
             if (seat.isBooked()) {
@@ -84,26 +84,29 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        // Step 5: Lock and mark seats as booked
+        // Step 5: Mark Seats as Booked
         for (Seat seat : requestedSeats) {
             seat.setBooked(true);
             seat.setLockedBy(channel.name());
             seat.setLockedAt(now);
-            seatRepository.save(seat);
         }
+        seatRepository.saveAll(requestedSeats);
 
-        // Step 6: Create a Booking record
+        // Step 6: Create a Booking Record
         Booking booking = new Booking();
-        booking.setCustomer(customer); // maybe null for box office
+        booking.setCustomer(customer);
         booking.setShow(show);
         booking.setBookingTime(now);
         booking.setChannel(channel);
         booking.setStatus(BookingStatus.BOOKED);
-        booking.setSeatNo(String.join(",", seatNumbers)); // simple seat list storage
+        booking.setSeatNo(String.join(",", seatNumbers));
 
-        bookingRepository.save(booking);
+        try {
+            bookingRepository.save(booking);
+        } catch (DataIntegrityViolationException e) {
+            throw new RuntimeException("Seat already booked — please refresh and try again!");
+        }
 
-        // Step 7: Return confirmation
         return booking;
     }
 
@@ -127,7 +130,7 @@ public class BookingServiceImpl implements BookingService {
             seat.setBooked(false);
             seat.setLockedBy(null);
             seat.setLockedAt(null);
-            seatRepository.save(seat);
         }
+        seatRepository.saveAll(seats);
     }
 }
