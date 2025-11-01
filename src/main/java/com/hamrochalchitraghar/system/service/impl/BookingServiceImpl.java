@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -21,7 +22,31 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<Seat> getAvailableSeats(Long showId) {
-        return seatRepository.findByShowIdAndBookedFalse(showId);
+        List<Seat> seats = seatRepository.findByShowId(showId);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        return seats.stream()
+                .filter(seat -> !seat.isBooked())                      // not booked
+                .filter(seat -> seat.getLockedAt() == null ||          // not locked
+                        seat.getLockedAt().isBefore(now.minusMinutes(10))) // or lock expired
+                .toList();
+    }
+
+    @Transactional
+    public void lockSeats(Long showId, List<String> seatNumbers, String lockedBy) {
+        List<Seat> seatsToLock = seatRepository.findByShowId(showId).stream()
+                .filter(seat -> seatNumbers.contains(seat.getSeatNo()))
+                .filter(seat -> !seat.isBooked())
+                .toList();
+
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Seat seat : seatsToLock) {
+            seat.setLockedBy(lockedBy);
+            seat.setLockedAt(now);
+            seatRepository.save(seat);
+        }
     }
 
     @Override

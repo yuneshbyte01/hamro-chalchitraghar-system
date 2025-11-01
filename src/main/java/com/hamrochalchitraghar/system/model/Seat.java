@@ -4,6 +4,8 @@ import com.hamrochalchitraghar.system.model.enums.SeatType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "seats")
 @Data
@@ -26,4 +28,11 @@ public class Seat {
 
     @Enumerated(EnumType.STRING)
     private SeatType seatType;
+
+    @Column(name = "locked_by")
+    private String lockedBy;
+
+    @Column(name = "locked_at")
+    private LocalDateTime lockedAt;
+
 }
