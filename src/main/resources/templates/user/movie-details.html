@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${movie.title} + ' – Showtimes'"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+<h2 th:text="${movie.title}"></h2>
+<p><strong>Genre:</strong> <span th:text="${movie.genre}"></span></p>
+<p><strong>Duration:</strong> <span th:text="${movie.duration} + ' min'"></span></p>
+
+<h4 class="mt-4">Available Shows</h4>
+<table class="table table-striped">
+    <thead>
+    <tr><th>Hall</th><th>Show Time</th><th>Price (₨)</th><th></th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="show : ${shows}">
+        <td th:text="${show.hallNo}"></td>
+        <td th:text="${#temporals.format(show.showTime, 'dd-MMM hh:mm a')}"></td>
+        <td th:text="${show.price}"></td>
+        <td><a th:href="@{'/user/shows/' + ${show.id}}" class="btn btn-success btn-sm">Select Seats</a></td>
+    </tr>
+    </tbody>
+</table>
+<a href="/user/" class="btn btn-secondary mt-3">⬅ Back</a>
+</body>
+</html>

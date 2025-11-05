@@ -13,6 +13,7 @@ import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
+@RequestMapping("/user")
 public class UserController {
 
     private final MovieRepository movieRepository;
@@ -20,71 +21,61 @@ public class UserController {
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
 
-    /**
-     * Homepage – List all movies
-     */
+    /** Homepage — List all movies */
     @GetMapping("/")
     public String home(Model model) {
         try {
             List<Movie> movies = movieRepository.findAll();
             model.addAttribute("movies", movies);
-            return "index";
+            return "user/index";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Unable to load movies");
+            model.addAttribute("error", "Unable to load movies.");
             return "error-page";
         }
     }
 
-    /**
-     * Movie details + showtime
-     */
+    /** Movie details + showtime */
     @GetMapping("/movies/{id}")
     public String movieDetails(@PathVariable Long id, Model model) {
         try {
             Movie movie = movieRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Movie not found"));
             List<Show> shows = showRepository.findByMovieId(id);
-
             model.addAttribute("movie", movie);
             model.addAttribute("shows", shows);
-            return "movie-details";
+            return "user/movie-details";
         } catch (RuntimeException e) {
             model.addAttribute("error", e.getMessage());
             return "error-page";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Unexpected error occurred");
+            model.addAttribute("error", "Unexpected error occurred.");
             return "error-page";
         }
     }
 
-    /**
-     * Seat selection page
-     */
+    /** Seat selection page */
     @GetMapping("/shows/{id}")
     public String seatSelection(@PathVariable Long id, Model model) {
         try {
             Show show = showRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Show not found"));
             List<Seat> seats = bookingService.getAvailableSeats(id);
-
             model.addAttribute("show", show);
             model.addAttribute("seats", seats);
-            return "seat-selection";
+            return "user/seat-selection";
         } catch (RuntimeException e) {
             model.addAttribute("error", e.getMessage());
             return "error-page";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Error loading seat selection");
+            model.addAttribute("error", "Error loading seat selection.");
             return "error-page";
         }
     }
 
-    /**
-     * Confirm booking
-     */
+    /** Confirm booking */
     @PostMapping("/shows/{id}/book")
     public String confirmBooking(
             @PathVariable Long id,
@@ -94,36 +85,32 @@ public class UserController {
         try {
             Booking booking = bookingService.bookSeats(customerId, id, seatNumbers, BookingChannel.ONLINE);
             model.addAttribute("booking", booking);
-            return "booking-confirmation";
+            return "user/booking-confirmation-user";
         } catch (RuntimeException e) {
             model.addAttribute("error", e.getMessage());
             return "error-page";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Error during booking process");
+            model.addAttribute("error", "Error during booking process.");
             return "error-page";
         }
     }
 
-    /**
-     * View all user bookings
-     */
+    /** View all user bookings */
     @GetMapping("/bookings")
     public String viewBookings(@RequestParam Long customerId, Model model) {
         try {
             List<Booking> bookings = bookingRepository.findByCustomerId(customerId);
             model.addAttribute("bookings", bookings);
-            return "user-bookings";
+            return "user/user-bookings";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Unable to load booking list");
+            model.addAttribute("error", "Unable to load bookings.");
             return "error-page";
         }
     }
 
-    /**
-     * Cancel booking
-     */
+    /** Cancel booking */
     @PostMapping("/bookings/{bookingId}/cancel")
     public String cancelBooking(@PathVariable Long bookingId, Model model) {
         try {
@@ -134,7 +121,7 @@ public class UserController {
             return "error-page";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Error while cancelling booking");
+            model.addAttribute("error", "Error while cancelling booking.");
             return "error-page";
         }
     }
