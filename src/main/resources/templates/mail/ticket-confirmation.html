@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Hamro Chalchitraghar Ticket Confirmation</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #333;">
+<h2>🎟️ Ticket Confirmation</h2>
+<p>Dear <strong th:text="${booking.customer.name}"></strong>,</p>
+
+<p>Your booking has been confirmed!</p>
+
+<table style="border-collapse: collapse; margin: 10px 0;">
+    <tr><td><strong>Movie:</strong></td><td th:text="${booking.show.movie.title}"></td></tr>
+    <tr><td><strong>Show Time:</strong></td><td th:text="${#temporals.format(booking.show.showTime, 'dd MMM yyyy hh:mm a')}"></td></tr>
+    <tr><td><strong>Hall:</strong></td><td th:text="${booking.show.hallNo}"></td></tr>
+    <tr><td><strong>Seats:</strong></td><td th:text="${booking.seatNo}"></td></tr>
+    <tr><td><strong>Booking ID:</strong></td><td th:text="${booking.id}"></td></tr>
+</table>
+
+<p>Thank you for booking with <strong>Hamro Chalchitraghar</strong>.<br>
+    Enjoy your movie!</p>
+
+<hr>
+<p style="font-size: 12px; color: gray;">© 2025 Hamro Chalchitraghar – Kathmandu</p>
+</body>
+</html>
