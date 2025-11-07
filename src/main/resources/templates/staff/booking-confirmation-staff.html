@@ -1,41 +1,52 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Box Office Bookings</title>
+    <title>Booking Confirmation – Box Office | Hamro Chalchitraghar</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-<body class="p-4">
-<h2 class="text-center mb-3">Box Office Bookings</h2>
+<body class="p-4 text-center">
 
-<table class="table table-hover">
-    <thead class="table-dark">
-    <tr>
-        <th>ID</th>
-        <th>Movie</th>
-        <th>Show Time</th>
-        <th>Seats</th>
-        <th>Status</th>
-        <th>Action</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="b : ${bookings}">
-        <td th:text="${b.id}"></td>
-        <td th:text="${b.show.movie.title}"></td>
-        <td th:text="${#temporals.format(b.show.showTime, 'dd-MMM hh:mm a')}"></td>
-        <td th:text="${b.seatNo}"></td>
-        <td th:text="${b.status}"></td>
-        <td>
-            <form th:action="@{'/staff/bookings/' + ${b.id} + '/cancel'}" method="post">
-                <button th:if="${b.status.name() == 'BOOKED'}" class="btn btn-danger btn-sm">Cancel</button>
-            </form>
-        </td>
-    </tr>
-    </tbody>
-</table>
+<h2 class="text-success mb-3">✅ Walk-in Booking Confirmed!</h2>
 
-<div class="text-center mt-3">
-    <a href="/staff/dashboard" class="btn btn-secondary">⬅ Back to Dashboard</a>
+<div class="card mx-auto shadow-sm" style="max-width: 420px;">
+    <div class="card-body">
+        <h5 th:text="${booking.show.movie.title}"></h5>
+        <p><strong>Show Time:</strong>
+            <span th:text="${#temporals.format(booking.show.showTime, 'dd-MMM hh:mm a')}"></span>
+        </p>
+        <p><strong>Hall:</strong>
+            <span th:text="${booking.show.hallNo}"></span>
+        </p>
+        <p><strong>Seats:</strong>
+            <span th:text="${booking.seatNo}"></span>
+        </p>
+        <p><strong>Status:</strong>
+            <span th:text="${booking.status}"></span>
+        </p>
+        <p><strong>Channel:</strong>
+            <span th:text="${booking.channel}"></span>
+        </p>
+        <hr>
+        <p><strong>Booking Time:</strong>
+            <span th:text="${#temporals.format(booking.bookingTime, 'dd-MMM hh:mm a')}"></span>
+        </p>
+        <p><strong>Booking ID:</strong>
+            <span th:text="${booking.id}"></span>
+        </p>
+    </div>
 </div>
+
+<div class="mt-4 d-flex justify-content-center gap-2">
+    <a th:href="@{'/staff/print/' + ${booking.id}}" class="btn btn-success">
+        🖨 Print Ticket
+    </a>
+    <a href="/staff/dashboard" class="btn btn-primary">
+        ⬅ Back to Dashboard
+    </a>
+    <a href="/staff/bookings" class="btn btn-secondary">
+        📋 View All Bookings
+    </a>
+</div>
+
 </body>
 </html>

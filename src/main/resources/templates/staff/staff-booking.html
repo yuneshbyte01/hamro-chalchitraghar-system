@@ -1,29 +1,52 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Box Office Dashboard</title>
+    <title>Box Office Bookings – Hamro Chalchitraghar</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body class="p-4">
-<h2 class="text-center mb-3">🎟 Box Office – Today's Shows</h2>
+<h2 class="text-center mb-3">Box Office Bookings</h2>
 
-<table class="table table-striped">
-    <thead>
-    <tr><th>Movie</th><th>Hall</th><th>Show Time</th><th>Price (₨)</th><th></th></tr>
+<!-- Empty State -->
+<div th:if="${#lists.isEmpty(bookings)}" class="alert alert-info text-center">
+    No box office bookings have been made yet.
+</div>
+
+<!-- Booking Table -->
+<table class="table table-hover align-middle" th:if="${!#lists.isEmpty(bookings)}">
+    <thead class="table-dark">
+    <tr>
+        <th>ID</th>
+        <th>Movie</th>
+        <th>Show Time</th>
+        <th>Hall</th>
+        <th>Seats</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
     </thead>
     <tbody>
-    <tr th:each="show : ${shows}">
-        <td th:text="${show.movie.title}"></td>
-        <td th:text="${show.hallNo}"></td>
-        <td th:text="${#temporals.format(show.showTime, 'dd-MMM hh:mm a')}"></td>
-        <td th:text="${show.price}"></td>
-        <td><a th:href="@{'/staff/shows/' + ${show.id}}" class="btn btn-primary btn-sm">Book Seats</a></td>
+    <tr th:each="b : ${bookings}">
+        <td th:text="${b.id}"></td>
+        <td th:text="${b.show.movie.title}"></td>
+        <td th:text="${#temporals.format(b.show.showTime, 'dd-MMM hh:mm a')}"></td>
+        <td th:text="${b.show.hallNo}"></td>
+        <td th:text="${b.seatNo}"></td>
+        <td th:text="${b.status}"></td>
+        <td class="text-center">
+            <div class="btn-group">
+                <form th:action="@{'/staff/bookings/' + ${b.id} + '/cancel'}" method="post" style="display:inline;">
+                    <button th:if="${b.status.name() == 'BOOKED'}" class="btn btn-danger btn-sm me-1">Cancel</button>
+                </form>
+                <a th:href="@{'/staff/print/' + ${b.id}}" class="btn btn-success btn-sm">🖨 Print</a>
+            </div>
+        </td>
     </tr>
     </tbody>
 </table>
 
 <div class="text-center mt-3">
-    <a href="/staff/bookings" class="btn btn-secondary">View All Bookings</a>
+    <a href="/staff/dashboard" class="btn btn-secondary">⬅ Back to Dashboard</a>
 </div>
 </body>
 </html>

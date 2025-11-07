@@ -4,6 +4,7 @@ import com.hamrochalchitraghar.system.model.*;
 import com.hamrochalchitraghar.system.model.enums.BookingChannel;
 import com.hamrochalchitraghar.system.repository.*;
 import com.hamrochalchitraghar.system.service.BookingService;
+import com.hamrochalchitraghar.system.service.PrintService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,8 +22,11 @@ public class StaffController {
     private final SeatRepository seatRepository;
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
+    private final PrintService printService;
 
-    /** Dashboard — view today’s shows */
+    /**
+     * Dashboard — view today's shows
+     */
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         try {
@@ -31,6 +35,7 @@ public class StaffController {
                     .stream()
                     .filter(s -> s.getShowTime().toLocalDate().isEqual(today))
                     .toList();
+
             model.addAttribute("shows", shows);
             return "staff/staff-dashboard";
         } catch (Exception e) {
@@ -40,13 +45,16 @@ public class StaffController {
         }
     }
 
-    /** Seat selection for a specific show */
+    /**
+     * Seat selection for a specific show
+     */
     @GetMapping("/shows/{id}")
     public String seatSelection(@PathVariable Long id, Model model) {
         try {
             Show show = showRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Show not found"));
             List<Seat> seats = seatRepository.findByShowId(id);
+
             model.addAttribute("show", show);
             model.addAttribute("seats", seats);
             return "staff/staff-seat-selection";
@@ -60,15 +68,23 @@ public class StaffController {
         }
     }
 
-    /** Confirm walk-in booking */
+    /**
+     * Confirm walk-in booking
+     */
     @PostMapping("/shows/{id}/book")
     public String confirmBooking(@PathVariable Long id,
                                  @RequestParam List<String> seatNumbers,
                                  Model model) {
         try {
             Booking booking = bookingService.bookSeats(null, id, seatNumbers, BookingChannel.BOX_OFFICE);
+
+            // Immediately print via POS printer
+            printService.printTicket(booking);
+
+            // Pass booking info to confirmation page
             model.addAttribute("booking", booking);
             return "staff/booking-confirmation-staff";
+
         } catch (RuntimeException e) {
             model.addAttribute("error", e.getMessage());
             return "error-page";
@@ -79,7 +95,9 @@ public class StaffController {
         }
     }
 
-    /** View all box-office bookings */
+    /**
+     * View all box-office bookings
+     */
     @GetMapping("/bookings")
     public String viewBookings(Model model) {
         try {
@@ -87,6 +105,7 @@ public class StaffController {
                     .stream()
                     .filter(b -> b.getChannel() == BookingChannel.BOX_OFFICE)
                     .toList();
+
             model.addAttribute("bookings", bookings);
             return "staff/staff-bookings";
         } catch (Exception e) {
@@ -96,7 +115,9 @@ public class StaffController {
         }
     }
 
-    /** Cancel a booking */
+    /**
+     * Cancel a booking
+     */
     @PostMapping("/bookings/{id}/cancel")
     public String cancelBooking(@PathVariable Long id, Model model) {
         try {
@@ -108,6 +129,26 @@ public class StaffController {
         } catch (Exception e) {
             e.printStackTrace();
             model.addAttribute("error", "Error while cancelling booking.");
+            return "error-page";
+        }
+    }
+
+    /**
+     * Print ticket preview (browser-based print page)
+     */
+    @GetMapping("/print/{id}")
+    public String printTicket(@PathVariable Long id, Model model) {
+        try {
+            Booking booking = bookingRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Booking not found"));
+            model.addAttribute("booking", booking);
+            return "staff/print-ticket";
+        } catch (RuntimeException e) {
+            model.addAttribute("error", e.getMessage());
+            return "error-page";
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", "Error loading ticket for printing.");
             return "error-page";
         }
     }
