@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Hall Occupancy – Hamro Chalchitraghar</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+</head>
+<body class="p-4 bg-light">
+
+<h2 class="text-center mb-4">🏢 Hall Occupancy Monitoring</h2>
+
+<div class="container">
+    <div class="row" th:each="h : ${halls}">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 th:text="'Hall ' + ${h.hallNo} + ' – ' + ${h.movie}"></h5>
+                    <p th:text="${#temporals.format(h.showTime, 'dd-MMM hh:mm a')}"></p>
+
+                    <div>
+                        <strong>Booked:</strong> <span th:text="${h.bookedSeats}"></span> /
+                        <span th:text="${h.totalSeats}"></span>
+                    </div>
+
+                    <div class="progress my-3" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar"
+                             th:style="'width:' + ${h.occupancyRate} + '%;' +
+                             (${h.occupancyRate} >= 80 ? 'background-color:red;' :
+                              ${h.occupancyRate} >= 50 ? 'background-color:orange;' :
+                              'background-color:green;')"
+                             th:text="${#numbers.formatDecimal(h.occupancyRate, 0, 1)} + '%'">
+                        </div>
+                    </div>
+
+                    <canvas th:attr="id='chart-' + ${h.hallNo}" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <a href="/admin/dashboard" class="btn btn-secondary">⬅ Back to Dashboard</a>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const halls = /*[[${halls}]]*/ [];
+    halls.forEach(h => {
+        const ctx = document.getElementById('chart-' + h.hallNo);
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Booked', 'Available'],
+                datasets: [{
+                    data: [h.bookedSeats, h.totalSeats - h.bookedSeats],
+                    backgroundColor: ['#f44336', '#4caf50']
+                }]
+            },
+            options: { plugins: { legend: { display: false } } }
+        });
+    });
+
+    const socket = new SockJS('/ws');
+    const stomp = Stomp.over(socket);
+    stomp.connect({}, () => {
+        stomp.subscribe('/topic/seat-updates', (message) => {
+            console.log("🔄 Seat update received:", message.body);
+            location.reload(); // quick live refresh for now
+        });
+    });
+    /*]]>*/
+</script>
+
+</body>
+</html>

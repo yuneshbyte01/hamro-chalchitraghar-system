@@ -5,6 +5,7 @@ import com.hamrochalchitraghar.system.model.enums.*;
 import com.hamrochalchitraghar.system.repository.*;
 import com.hamrochalchitraghar.system.service.BookingService;
 import com.hamrochalchitraghar.system.service.EmailService;
+import com.hamrochalchitraghar.system.service.SeatBroadcastService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class BookingServiceImpl implements BookingService {
     private final SeatRepository seatRepository;
     private final BookingRepository bookingRepository;
     private final EmailService emailService;
+    private final SeatBroadcastService seatBroadcastService;
 
     @Override
     public List<Seat> getAvailableSeats(Long showId) {
@@ -121,6 +123,14 @@ public class BookingServiceImpl implements BookingService {
             System.err.println("⚠️ Failed to send booking confirmation email: " + e.getMessage());
         }
 
+        // 8️⃣ 🔄 Trigger Real-Time Seat Sync (Mission 5.5)
+        try {
+            seatBroadcastService.sendSeatUpdate(showId, requestedSeats);
+            System.out.println("📡 WebSocket broadcast sent for Show ID: " + showId);
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to broadcast seat update: " + e.getMessage());
+        }
+
         return booking;
     }
 
@@ -134,16 +144,17 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("Booking already cancelled!");
         }
 
-        // Identify who cancelled
+        // 1️⃣ Identify who cancelled
         String actor = (booking.getCustomer() != null) ? "CUSTOMER" : "SYSTEM";
 
+        // 2️⃣ Update booking status
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledAt(LocalDateTime.now());
         booking.setCancelledBy(actor);
         booking.setCancellationReason("User requested cancellation");
         bookingRepository.saveAndFlush(booking);
 
-        // Release seats
+        // 3️⃣ Release seats
         List<String> seatNumbers = List.of(booking.getSeatNo().split(","));
         List<Seat> seats = seatRepository.findByShowId(booking.getShow().getId())
                 .stream()
@@ -156,6 +167,14 @@ public class BookingServiceImpl implements BookingService {
             seat.setLockedAt(null);
         }
         seatRepository.saveAll(seats);
+
+        // 4️⃣ 🔄 Broadcast seat availability in real-time
+        try {
+            seatBroadcastService.sendSeatUpdate(booking.getShow().getId(), seats);
+            System.out.println("📡 Seat unlock broadcast sent for cancelled booking ID: " + bookingId);
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to broadcast seat unlock update: " + e.getMessage());
+        }
 
         System.out.println("🔁 Booking " + bookingId + " cancelled by " + actor + ", seats released: " + seatNumbers);
     }

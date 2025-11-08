@@ -26,6 +26,7 @@ public class AdminController {
 
     private final BookingRepository bookingRepository;
     private final MovieRepository movieRepository;
+    private final ShowRepository showRepository;
     private final CustomerRepository customerRepository;
 
     @GetMapping("/dashboard")
@@ -160,5 +161,30 @@ public class AdminController {
     public String deleteUser(@PathVariable Long id) {
         customerRepository.deleteById(id);
         return "redirect:/admin/users";
+    }
+
+    @GetMapping("/halls")
+    public String hallOccupancy(Model model) {
+        List<Show> shows = showRepository.findAll();
+
+        List<Map<String, Object>> hallData = new ArrayList<>();
+        for (Show show : shows) {
+            long totalSeats = show.getSeats().size();
+            long bookedSeats = show.getSeats().stream().filter(Seat::isBooked).count();
+            double occupancyRate = totalSeats == 0 ? 0 : (bookedSeats * 100.0 / totalSeats);
+
+            Map<String, Object> hall = new HashMap<>();
+            hall.put("hallNo", show.getHallNo());
+            hall.put("movie", show.getMovie().getTitle());
+            hall.put("showTime", show.getShowTime());
+            hall.put("bookedSeats", bookedSeats);
+            hall.put("totalSeats", totalSeats);
+            hall.put("occupancyRate", occupancyRate);
+
+            hallData.add(hall);
+        }
+
+        model.addAttribute("halls", hallData);
+        return "admin/admin-halls";
     }
 }
