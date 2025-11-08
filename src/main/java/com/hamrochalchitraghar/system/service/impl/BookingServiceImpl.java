@@ -65,7 +65,7 @@ public class BookingServiceImpl implements BookingService {
                     .orElseThrow(() -> new RuntimeException("Customer not found with ID: " + customerId));
         }
 
-        // 3️⃣ Fetch and Lock Seats
+        // 3️⃣ Fetch and Lock Seats (pessimistic lock)
         List<Seat> requestedSeats = seatRepository.findSeatsForUpdate(showId, seatNumbers)
                 .stream()
                 .filter(seat -> seatNumbers.contains(seat.getSeatNo()))
@@ -75,7 +75,7 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("No valid seats found for this show!");
         }
 
-        // 4️⃣ Validate Seats
+        // 4️⃣ Validate each seat
         LocalDateTime now = LocalDateTime.now();
         for (Seat seat : requestedSeats) {
             if (seat.isBooked()) {
@@ -113,8 +113,9 @@ public class BookingServiceImpl implements BookingService {
         try {
             if (customer != null && customer.getEmail() != null && !customer.getEmail().isBlank()) {
                 emailService.sendBookingConfirmation(booking);
+                System.out.println("📧 Booking confirmation email sent to " + customer.getEmail());
             } else {
-                System.out.println("⚠️ No email configured for customer ID: " + customerId);
+                System.out.println("⚠️ No email address found for customer ID: " + customerId);
             }
         } catch (Exception e) {
             System.err.println("⚠️ Failed to send booking confirmation email: " + e.getMessage());
