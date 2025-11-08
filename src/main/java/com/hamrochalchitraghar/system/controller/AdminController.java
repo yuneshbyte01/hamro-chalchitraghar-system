@@ -166,7 +166,6 @@ public class AdminController {
     @GetMapping("/halls")
     public String hallOccupancy(Model model) {
         List<Show> shows = showRepository.findAll();
-
         List<Map<String, Object>> hallData = new ArrayList<>();
         for (Show show : shows) {
             long totalSeats = show.getSeats().size();
@@ -180,10 +179,8 @@ public class AdminController {
             hall.put("bookedSeats", bookedSeats);
             hall.put("totalSeats", totalSeats);
             hall.put("occupancyRate", occupancyRate);
-
             hallData.add(hall);
         }
-
         model.addAttribute("halls", hallData);
         return "admin/admin-halls";
     }
