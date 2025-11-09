@@ -7,7 +7,7 @@ import org.springframework.ui.Model;
 @Controller
 public class HomeController {
 
-    @GetMapping("/home")
+    @GetMapping("/")
     public String home(Model model) {
         model.addAttribute("message", "🎥 Hamro Chalchitraghar System is running successfully!");
         return "index";

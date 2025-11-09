@@ -187,7 +187,7 @@ public class AdminController {
         return "admin/admin-halls";
     }
 
-    @GetMapping("/admin/errors")
+    @GetMapping("/errors")
     public String viewErrors(Model model) {
         List<ErrorLog> logs = errorLogRepository.findAll()
                 .stream()

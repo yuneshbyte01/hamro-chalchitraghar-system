@@ -14,28 +14,29 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/user")
-public class UserController {
+public class CustomerController {
 
     private final MovieRepository movieRepository;
     private final ShowRepository showRepository;
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
+    private final CustomerRepository customerRepository;
 
-    /** Homepage — List all movies */
-    @GetMapping("/")
+    /** 🎬 User Dashboard — List all movies */
+    @GetMapping("/dashboard")
     public String home(Model model) {
         try {
             List<Movie> movies = movieRepository.findAll();
             model.addAttribute("movies", movies);
-            return "user/index";
+            return "user/user-dashboard";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Unable to load movies.");
+            model.addAttribute("error", "Unable to load movies at the moment.");
             return "error-page";
         }
     }
 
-    /** Movie details + showtime */
+    /** 🎞 Movie Details & Showtime */
     @GetMapping("/movies/{id}")
     public String movieDetails(@PathVariable Long id, Model model) {
         try {
@@ -50,12 +51,12 @@ public class UserController {
             return "error-page";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Unexpected error occurred.");
+            model.addAttribute("error", "Unexpected error occurred while loading movie details.");
             return "error-page";
         }
     }
 
-    /** Seat selection page */
+    /** 🪑 Seat Selection Page */
     @GetMapping("/shows/{id}")
     public String seatSelection(@PathVariable Long id, Model model) {
         try {
@@ -70,12 +71,12 @@ public class UserController {
             return "error-page";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Error loading seat selection.");
+            model.addAttribute("error", "Error loading seat selection page.");
             return "error-page";
         }
     }
 
-    /** Confirm booking */
+    /** ✅ Confirm Booking (Online Channel) */
     @PostMapping("/shows/{id}/book")
     public String confirmBooking(
             @PathVariable Long id,
@@ -83,39 +84,50 @@ public class UserController {
             @RequestParam List<String> seatNumbers,
             Model model) {
         try {
-            Booking booking = bookingService.bookSeats(customerId, id, seatNumbers, BookingChannel.ONLINE);
+            // Validate customer first
+            Customer customer = customerRepository.findById(customerId)
+                    .orElseThrow(() -> new RuntimeException("Customer not found with ID: " + customerId));
+
+            Booking booking = bookingService.bookSeats(customer.getId(), id, seatNumbers, BookingChannel.ONLINE);
             model.addAttribute("booking", booking);
             return "user/booking-confirmation-user";
+
         } catch (RuntimeException e) {
             model.addAttribute("error", e.getMessage());
             return "error-page";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Error during booking process.");
+            model.addAttribute("error", "Error during booking confirmation.");
             return "error-page";
         }
     }
 
-    /** View all user bookings */
+    /** 🧾 View All Bookings for Customer */
     @GetMapping("/bookings")
     public String viewBookings(@RequestParam Long customerId, Model model) {
         try {
+            Customer customer = customerRepository.findById(customerId)
+                    .orElseThrow(() -> new RuntimeException("Customer not found."));
             List<Booking> bookings = bookingRepository.findByCustomerId(customerId);
+            model.addAttribute("customer", customer);
             model.addAttribute("bookings", bookings);
             return "user/user-bookings";
+        } catch (RuntimeException e) {
+            model.addAttribute("error", e.getMessage());
+            return "error-page";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Unable to load bookings.");
+            model.addAttribute("error", "Unable to load your bookings.");
             return "error-page";
         }
     }
 
-    /** Cancel booking */
+    /** ❌ Cancel a Booking */
     @PostMapping("/bookings/{bookingId}/cancel")
-    public String cancelBooking(@PathVariable Long bookingId, Model model) {
+    public String cancelBooking(@PathVariable Long bookingId, @RequestParam Long customerId, Model model) {
         try {
             bookingService.cancelBooking(bookingId);
-            return "redirect:/user/bookings";
+            return "redirect:/user/bookings?customerId=" + customerId;
         } catch (RuntimeException e) {
             model.addAttribute("error", e.getMessage());
             return "error-page";
