@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.management.ManagementFactory;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,6 +29,7 @@ public class AdminController {
     private final MovieRepository movieRepository;
     private final ShowRepository showRepository;
     private final CustomerRepository customerRepository;
+    private final ErrorLogRepository errorLogRepository;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -183,5 +185,21 @@ public class AdminController {
         }
         model.addAttribute("halls", hallData);
         return "admin/admin-halls";
+    }
+
+    @GetMapping("/admin/errors")
+    public String viewErrors(Model model) {
+        List<ErrorLog> logs = errorLogRepository.findAll()
+                .stream()
+                .sorted((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()))
+                .toList();
+
+        model.addAttribute("logs", logs);
+        model.addAttribute("uptime", ManagementFactory.getRuntimeMXBean().getUptime() / 1000);
+        model.addAttribute("activeUsers", customerRepository.count());
+        model.addAttribute("totalBookings", bookingRepository.count());
+        model.addAttribute("failedBookings",
+                logs.stream().filter(l -> l.getSource().equalsIgnoreCase("BookingService")).count());
+        return "admin/admin-errors";
     }
 }

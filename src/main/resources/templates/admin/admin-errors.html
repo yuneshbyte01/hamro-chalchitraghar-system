@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>System Health & Error Logs</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light p-4">
+<div class="container">
+    <h2 class="text-center mb-4">🧾 System Health & Error Logs</h2>
+
+    <!-- ✅ System Summary -->
+    <div class="row text-center mb-4">
+        <div class="col-md-3">
+            <div class="card p-3 bg-success text-white shadow-sm">
+                <h6>System Uptime</h6>
+                <p th:text="${uptime} + ' seconds'"></p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 bg-primary text-white shadow-sm">
+                <h6>Total Users</h6>
+                <p th:text="${activeUsers}"></p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 bg-warning text-dark shadow-sm">
+                <h6>Total Bookings</h6>
+                <p th:text="${totalBookings}"></p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 bg-danger text-white shadow-sm">
+                <h6>Failed Bookings</h6>
+                <p th:text="${failedBookings}"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ Error Table -->
+    <table class="table table-striped table-hover shadow-sm">
+        <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Source</th>
+            <th>Message</th>
+            <th>Timestamp</th>
+            <th>Stack Trace</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="log : ${logs}">
+            <td th:text="${log.id}"></td>
+            <td th:text="${log.source}"></td>
+            <td th:text="${log.message}"></td>
+            <td th:text="${#temporals.format(log.timestamp, 'dd-MMM hh:mm a')}"></td>
+            <td>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse"
+                        th:attr="data-bs-target='#trace-' + ${log.id}">View</button>
+            </td>
+        </tr>
+        <tr th:each="log : ${logs}">
+            <td colspan="5" class="p-0">
+                <div th:id="'trace-' + ${log.id}" class="collapse bg-light border p-2">
+                    <pre th:text="${log.stackTrace}"></pre>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="text-center mt-3">
+        <a href="/admin/dashboard" class="btn btn-secondary px-4">⬅ Back to Dashboard</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
