@@ -1,28 +1,84 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="${movie.title} + ' – Showtimes'"></title>
+    <title th:text="${movie.title} + ' – Showtimes | Hamro Chalchitraghar'"></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .movie-header {
+            background: linear-gradient(135deg, #222, #444);
+            color: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .poster {
+            width: 100%;
+            max-width: 250px;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        .btn-seat {
+            background-color: #ff6600;
+            border: none;
+        }
+        .btn-seat:hover {
+            background-color: #e65c00;
+        }
+        table {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body class="p-4">
-<h2 th:text="${movie.title}"></h2>
-<p><strong>Genre:</strong> <span th:text="${movie.genre}"></span></p>
-<p><strong>Duration:</strong> <span th:text="${movie.duration} + ' min'"></span></p>
+<div class="container">
 
-<h4 class="mt-4">Available Shows</h4>
-<table class="table table-striped">
-    <thead>
-    <tr><th>Hall</th><th>Show Time</th><th>Price (₨)</th><th></th></tr>
-    </thead>
-    <tbody>
-    <tr th:each="show : ${shows}">
-        <td th:text="${show.hallNo}"></td>
-        <td th:text="${#temporals.format(show.showTime, 'dd-MMM hh:mm a')}"></td>
-        <td th:text="${show.price}"></td>
-        <td><a th:href="@{'/user/shows/' + ${show.id}}" class="btn btn-success btn-sm">Select Seats</a></td>
-    </tr>
-    </tbody>
-</table>
-<a href="/user/" class="btn btn-secondary mt-3">⬅ Back</a>
+    <!-- 🎬 Movie Info Header -->
+    <div class="movie-header d-flex align-items-center flex-wrap">
+        <div class="me-4 mb-3 mb-md-0">
+            <img th:src="${movie.posterUrl}" alt="Poster" class="poster">
+        </div>
+        <div>
+            <h2 th:text="${movie.title}"></h2>
+            <p class="mb-1"><strong>Genre:</strong> <span th:text="${movie.genre}"></span></p>
+            <p class="mb-1"><strong>Duration:</strong> <span th:text="${movie.duration} + ' min'"></span></p>
+            <p class="mb-0"><strong>Language:</strong> <span th:text="${movie.language}"></span></p>
+        </div>
+    </div>
+
+    <!-- 🎟 Available Shows -->
+    <h4 class="mb-3">Available Shows</h4>
+    <div class="table-responsive">
+        <table class="table align-middle table-hover">
+            <thead class="table-dark text-center">
+            <tr>
+                <th>Hall</th>
+                <th>Show Time</th>
+                <th>Price (₨)</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody class="text-center">
+            <tr th:each="show : ${shows}">
+                <td th:text="${show.hallNo}"></td>
+                <td th:text="${#temporals.format(show.showTime, 'dd-MMM hh:mm a')}"></td>
+                <td th:text="${show.price}"></td>
+                <td>
+                    <a th:href="@{'/user/shows/' + ${show.id}}" class="btn btn-seat btn-sm fw-semibold">🎫 Select Seats</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="/user/" class="btn btn-secondary">⬅ Back to Movies</a>
+    </div>
+</div>
 </body>
 </html>

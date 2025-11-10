@@ -2,50 +2,163 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Seat Selection – Hamro Chalchitraghar</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <style>
-        .seat { width: 40px; height: 40px; margin: 5px; border-radius: 5px; cursor: pointer; text-align: center; line-height: 40px; font-weight: 500; }
-        .available { background-color: #4caf50; color: #fff; }
-        .booked { background-color: #f44336; color: #fff; cursor: not-allowed; }
-        .selected { background-color: #ff9800; color: #000; }
-        .locked { background-color: #9e9e9e; color: #fff; cursor: not-allowed; }
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .screen {
+            width: 70%;
+            height: 50px;
+            background: #fff;
+            border-radius: 0 0 100px 100px / 0 0 30px 30px;
+            text-align: center;
+            line-height: 50px;
+            color: #000;
+            font-weight: bold;
+            margin: 20px auto 40px;
+        }
+
+        .row-label {
+            width: 35px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #bbb;
+        }
+
+        .seat-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .seat {
+            position: relative;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            transition: transform 0.2s ease;
+        }
+
+        .seat:hover {
+            transform: scale(1.08);
+        }
+
+        .seat svg {
+            width: 58px;
+            height: 58px;
+        }
+
+        .front-row svg path { fill: #e91e63; }
+        .back-row svg path { fill: #d32f2f; }
+        .selected svg path { fill: #ff9800; }
+        .booked svg path { fill: #616161; cursor: not-allowed; }
+
+        .seat span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -55%);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+            pointer-events: none;
+        }
+
+        .selected span {
+            color: #000;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .legend div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        .legend svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .btn-confirm {
+            background-color: #ff6600;
+            border: none;
+        }
+
+        .btn-confirm:hover {
+            background-color: #e65c00;
+        }
     </style>
 </head>
 <body class="p-4">
-<div class="container">
-    <h2 class="text-center mb-3">Select Seats</h2>
+<div class="container text-center">
+    <h2 class="fw-bold mb-4">🎟 Choose Your Seats</h2>
 
-    <div class="mb-3">
-        <p><strong>Movie:</strong> <span th:text="${show.movie.title}"></span></p>
-        <p><strong>Show Time:</strong> <span th:text="${#temporals.format(show.showTime, 'dd-MMM hh:mm a')}"></span></p>
-        <p><strong>Hall:</strong> <span th:text="${show.hallNo}"></span></p>
-    </div>
+    <div class="screen">SCREEN</div>
 
-    <div class="d-flex flex-wrap justify-content-center" style="max-width: 500px;">
-        <div th:each="seat : ${seats}"
-             th:class="'seat ' + (${seat.booked} ? 'booked' : 'available')"
-             th:data-seat="${seat.seatNo}"
-             th:text="${seat.seatNo}"
-             onclick="toggleSeat(this)">
+    <div th:if="${seats}">
+        <div th:each="rowLabel : ${#lists.arrayList('A','B','C','D','E','F','G','H','I','J','K')}">
+            <div class="seat-row">
+                <div class="row-label" th:text="${rowLabel}"></div>
+
+                <button th:each="seat : ${seats}"
+                        th:if="${seat.seatNo != null and seat.seatNo.startsWith(rowLabel)}"
+                        th:classappend="${seat.booked} ? 'booked' :
+                            (#lists.contains(#lists.arrayList('A','B','C','D','E','F'), rowLabel) ? 'front-row' : 'back-row')"
+                        class="seat"
+                        th:data-seat="${seat.seatNo}"
+                        th:title="'Seat ' + ${seat.seatNo}"
+                        onclick="toggleSeat(this)">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M7 13v-2h10v2h-1v5h3v2H5v-2h3v-5H7zm10-7v3H7V6a3 3 0 013-3h4a3 3 0 013 3z"/>
+                    </svg>
+                    <span th:text="${seat.seatNo != null ? #strings.substring(seat.seatNo, 1) : ''}"></span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <form id="bookingForm" th:action="@{'/user/shows/' + ${show.id} + '/book'}" method="post" class="text-center mt-4">
+    <div class="legend mt-4">
+        <div><svg><path fill="#e91e63" d="M7 13v-2h10v2h-1v5h3v2H5v-2h3v-5H7z"/></svg> Front Row</div>
+        <div><svg><path fill="#d32f2f" d="M7 13v-2h10v2h-1v5h3v2H5v-2h3v-5H7z"/></svg> Back Row</div>
+        <div><svg><path fill="#ff9800" d="M7 13v-2h10v2h-1v5h3v2H5v-2h3v-5H7z"/></svg> Selected</div>
+        <div><svg><path fill="#616161" d="M7 13v-2h10v2h-1v5h3v2H5v-2h3v-5H7z"/></svg> Booked</div>
+    </div>
+
+    <form id="bookingForm" th:action="@{'/user/shows/' + ${show.id} + '/book'}"
+          method="post" class="text-center mt-4">
         <input type="hidden" name="customerId" value="1"/>
         <input type="hidden" id="seatNumbers" name="seatNumbers"/>
-        <button type="button" class="btn btn-primary" th:onclick="'submitBooking(' + ${show.id} + ')'">Confirm Booking</button>
-        <a href="/user/" class="btn btn-secondary">Back</a>
+        <button type="button" class="btn btn-confirm btn-lg text-white fw-semibold"
+                th:onclick="'submitBooking(' + ${show.id} + ')'">Confirm Booking</button>
+        <a href="/user/" class="btn btn-secondary ms-2">Back</a>
     </form>
 </div>
 
-<!-- WebSocket (SockJS + STOMP) -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script>
     let stompClient;
     const showId = /*[[${show.id}]]*/ 0;
 
-    // Connect to WebSocket
     function connectSocket() {
         const socket = new SockJS('/ws-seat');
         stompClient = Stomp.over(socket);
@@ -57,37 +170,19 @@
         });
     }
 
-    // Update seat color dynamically
     function updateSeatUI(update) {
         const btn = document.querySelector(`[data-seat="${update.seatNo}"]`);
         if (!btn) return;
-        btn.classList.remove('available', 'selected', 'booked', 'locked');
+        btn.classList.remove('front-row', 'back-row', 'selected', 'booked');
         if (update.status === 'BOOKED') btn.classList.add('booked');
-        else if (update.status === 'LOCKED') btn.classList.add('locked');
-        else btn.classList.add('available');
+        else btn.classList.add(update.rowLabel && ['A','B','C','D','E','F'].includes(update.rowLabel) ? 'front-row' : 'back-row');
     }
 
-    // Send updates to all clients
-    function sendSeatUpdate(seatNo, status) {
-        if (stompClient && stompClient.connected) {
-            stompClient.send("/app/seat-update", {}, JSON.stringify({
-                showId: showId,
-                seatNo: seatNo,
-                status: status,
-                updatedBy: "USER"
-            }));
-        }
-    }
-
-    // Toggle seat selection
     function toggleSeat(btn) {
-        if (btn.classList.contains('booked') || btn.classList.contains('locked')) return;
+        if (btn.classList.contains('booked')) return;
         btn.classList.toggle('selected');
-        const status = btn.classList.contains('selected') ? 'LOCKED' : 'AVAILABLE';
-        sendSeatUpdate(btn.dataset.seat, status);
     }
 
-    // Confirm booking
     function submitBooking(showId) {
         const selected = [...document.querySelectorAll('.selected')].map(b => b.dataset.seat);
         if (selected.length === 0) {
